@@ -8,13 +8,28 @@ async function getCategoryIdByUrl(categoryUrl) {
 
 async function getProductsbyCategory(url) {
     const categoryId = await getCategoryIdByUrl(url);
-    const [products] = await sql.query("SELECT name, price FROM products WHERE category = ?", categoryId);
+    const [products] = await sql.query("SELECT name, price, images_small, url FROM products WHERE category = ?", categoryId);
     return products;
 }
 
 async function getProduct(url) {
     const [product] = await sql.query("SELECT name, price, description, quantity, url, images_big, images_small FROM products WHERE url = ?", url);
     return product[0];
+}
+
+async function getLatestProducts() {
+    const [products] = await sql.query("SELECT name, price, images_small, url FROM products ORDER BY date DESC LIMIT 5");
+    return products;
+}
+
+async function getBestSellingProducts() {
+    const [products] = await sql.query("SELECT name, price, images_small, url FROM products ORDER BY total_sold DESC LIMIT 5");
+    return products;
+}
+
+async function getFavoriteProducts() {
+    const [products] = await sql.query("SELECT name, price, images_small, url FROM products WHERE highlight='1' ORDER BY date DESC LIMIT 5");
+    return products;
 }
 
 const getSingleProduct = ash(async (req, res) => {
@@ -27,4 +42,11 @@ const getProducts = ash(async (req, res) => {
     res.json(products);
 });
 
-module.exports = { getProducts, getSingleProduct };
+const getHomeProducts = ash(async (req, res) => {
+    const latestProducts = await getLatestProducts();
+    const bestSellingProducts = await getBestSellingProducts();
+    const favoriteProducts = await getFavoriteProducts();
+    res.json({ latestProducts, bestSellingProducts, favoriteProducts });
+});
+
+module.exports = { getProducts, getSingleProduct, getHomeProducts };
