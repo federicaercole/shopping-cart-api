@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const apiController = require('../controllers/apiController');
 
-router.get('/', (req, res) => {
-    return res.send('Received a GET HTTP method');
-});
+router.get('/:id', apiController.getSingleProduct);
+
+router.get('/category/:category', apiController.getProducts);
 
 module.exports = router;
