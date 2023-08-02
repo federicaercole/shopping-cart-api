@@ -3,11 +3,10 @@ const ash = require('express-async-handler');
 
 async function getCategoryIdByUrl(categoryUrl) {
     const [category] = await sql.query("SELECT id FROM categories WHERE name = ?", categoryUrl);
-    return category[0].id;
+    return category[0];
 }
 
-async function getProductsbyCategory(filter, url) {
-    const categoryId = await getCategoryIdByUrl(url);
+async function getProductsbyCategory(filter, categoryId) {
     let query = "SELECT name, price, images_small, url FROM products WHERE category = ?";
     query += filter;
     const [products] = await sql.query(query, categoryId);
@@ -56,15 +55,23 @@ const getProductsFilter = query => {
     return filter;
 };
 
-const getSingleProduct = ash(async (req, res) => {
+const getSingleProduct = ash(async (req, res, next) => {
     const product = await getProduct(req.params.id);
+    if (!product) {
+        return next();
+    }
     res.json(product);
 });
 
-const getProducts = ash(async (req, res) => {
+const getProducts = ash(async (req, res, next) => {
     const { sort } = req.query;
+    const category = await getCategoryIdByUrl(req.params.category);
+    if (!category) {
+        return next();
+    }
+    const categoryId = category.id;
     const filter = getProductsFilter(sort);
-    const products = await getProductsbyCategory(filter, req.params.category);
+    const products = await getProductsbyCategory(filter, categoryId);
     res.json(products);
 });
 
