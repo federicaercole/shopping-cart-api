@@ -6,9 +6,11 @@ async function getCategoryIdByUrl(categoryUrl) {
     return category[0].id;
 }
 
-async function getProductsbyCategory(url) {
+async function getProductsbyCategory(filter, url) {
     const categoryId = await getCategoryIdByUrl(url);
-    const [products] = await sql.query("SELECT name, price, images_small, url FROM products WHERE category = ?", categoryId);
+    let query = "SELECT name, price, images_small, url FROM products WHERE category = ?";
+    query += filter;
+    const [products] = await sql.query(query, categoryId);
     return products;
 }
 
@@ -32,13 +34,37 @@ async function getFavoriteProducts() {
     return products;
 }
 
+const getProductsFilter = query => {
+    let filter = "";
+    switch (query) {
+        case "alph-asc":
+            filter += " ORDER BY name ASC";
+            break;
+        case "alph-desc":
+            filter += " ORDER BY name DESC";
+            break;
+        case "price-asc":
+            filter += " ORDER BY price ASC";
+            break;
+        case "price-desc":
+            filter += " ORDER BY price DESC";
+            break;
+        default:
+            filter += " ORDER BY date DESC";
+            break;
+    }
+    return filter;
+};
+
 const getSingleProduct = ash(async (req, res) => {
     const product = await getProduct(req.params.id);
     res.json(product);
 });
 
 const getProducts = ash(async (req, res) => {
-    const products = await getProductsbyCategory(req.params.category);
+    const { sort } = req.query;
+    const filter = getProductsFilter(sort);
+    const products = await getProductsbyCategory(filter, req.params.category);
     res.json(products);
 });
 
@@ -49,4 +75,13 @@ const getHomeProducts = ash(async (req, res) => {
     res.json({ latestProducts, bestSellingProducts, favoriteProducts });
 });
 
-module.exports = { getProducts, getSingleProduct, getHomeProducts };
+const getSearchResults = ash(async (req, res) => {
+    const { s, sort } = req.query;
+    const filter = getProductsFilter(sort);
+    let query = `SELECT name, price, images_small, url FROM products WHERE description LIKE ? OR description LIKE ?`;
+    query += filter;
+    const [results] = await sql.query(query, [`%${s}%`, `%${s}%`]);
+    res.json(results);
+});
+
+module.exports = { getProducts, getSingleProduct, getHomeProducts, getSearchResults };
