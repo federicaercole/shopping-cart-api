@@ -7,7 +7,8 @@ async function getCategoryIdByUrl(categoryUrl) {
 }
 
 async function getProductsbyCategory(filter, categoryId) {
-    let query = "SELECT name, price, images_small, url FROM products WHERE category = ?";
+    let query = `SELECT products.name, price, images_small, url, categories.name AS category FROM products
+    JOIN categories ON products.category = categories.id WHERE category = ?`;
     query += filter;
     const [products] = await sql.query(query, categoryId);
     return products;
@@ -19,33 +20,37 @@ async function getProduct(url) {
 }
 
 async function getLatestProducts() {
-    const [products] = await sql.query("SELECT name, price, images_small, url FROM products ORDER BY date DESC LIMIT 5");
+    const [products] = await sql.query(`SELECT products.name, price, images_small, url, categories.name AS category FROM products
+    JOIN categories ON products.category = categories.id ORDER BY date DESC LIMIT 5`);
     return products;
 }
 
 async function getBestSellingProducts() {
-    const [products] = await sql.query("SELECT name, price, images_small, url FROM products ORDER BY total_sold DESC LIMIT 5");
+    const [products] = await sql.query(`SELECT products.name, price, images_small, url, categories.name AS category FROM products
+    JOIN categories ON products.category = categories.id ORDER BY total_sold DESC LIMIT 5`);
     return products;
 }
 
 async function getFavoriteProducts() {
-    const [products] = await sql.query("SELECT name, price, images_small, url FROM products WHERE highlight='1' ORDER BY date DESC LIMIT 5");
+    const [products] = await sql.query(`SELECT products.name, price, images_small, url, categories.name AS category FROM products
+    JOIN categories ON products.category = categories.id
+    WHERE highlight='1' ORDER BY date DESC LIMIT 5`);
     return products;
 }
 
 const getProductsFilter = query => {
     let filter = "";
     switch (query) {
-        case "alph-asc":
+        case "alphabeticalAZ":
             filter += " ORDER BY name ASC";
             break;
-        case "alph-desc":
+        case "alphabeticalZA":
             filter += " ORDER BY name DESC";
             break;
-        case "price-asc":
+        case "priceLH":
             filter += " ORDER BY price ASC";
             break;
-        case "price-desc":
+        case "priceHL":
             filter += " ORDER BY price DESC";
             break;
         default:
@@ -85,7 +90,8 @@ const getHomeProducts = ash(async (req, res) => {
 const getSearchResults = ash(async (req, res) => {
     const { s, sort } = req.query;
     const filter = getProductsFilter(sort);
-    let query = `SELECT name, price, images_small, url FROM products WHERE description LIKE ? OR description LIKE ?`;
+    let query = `SELECT products.name, price, images_small, url, categories.name AS category FROM products
+    JOIN categories ON products.category = categories.id WHERE description LIKE ? OR description LIKE ?`;
     query += filter;
     const [results] = await sql.query(query, [`%${s}%`, `%${s}%`]);
     res.json(results);
