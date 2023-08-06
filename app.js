@@ -18,9 +18,7 @@ app.use(function (req, res, next) {
 })
 
 app.use((err, req, res, next) => {
-    const statusCode = res.statusCode ? res.statusCode : 500;
-    res.status(statusCode);
-    res.json({ message: err.message });
+    res.status(err.status || 500).json({ message: err.message });
 });
 
-app.listen(process.env.PORT, () => console.log('Server started'));
+app.listen(process.env.PORT);
