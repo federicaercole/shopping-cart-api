@@ -1,11 +1,18 @@
 const express = require('express');
-const cors = require('cors')
+const cors = require('cors');
+const helmet = require('helmet');
 require('dotenv').config();
 const apiRouter = require('./routes/api');
 
 const app = express();
 
-app.use(cors());
+const corsOptions = {
+    origin: 'https://shopapp.federicaercole.com',
+    optionsSuccessStatus: 200,
+}
+
+app.use(helmet());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

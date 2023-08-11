@@ -1,5 +1,6 @@
 const sql = require('../config');
 const ash = require('express-async-handler');
+const { query, validationResult } = require("express-validator");
 
 async function getCategoryIdByUrl(categoryUrl) {
     const [category] = await sql.query("SELECT id FROM categories WHERE name = ?", categoryUrl);
@@ -60,6 +61,8 @@ const getProductsFilter = query => {
     return filter;
 };
 
+const searchInputValidation = query("s", "Please write a valid keyword to start a search").trim().notEmpty().escape();
+
 const getSingleProduct = ash(async (req, res, next) => {
     const product = await getProduct(req.params.id);
     if (!product) {
@@ -87,14 +90,20 @@ const getHomeProducts = ash(async (req, res) => {
     res.json({ latestProducts, bestSellingProducts, favoriteProducts });
 });
 
-const getSearchResults = ash(async (req, res) => {
-    const { s, sort } = req.query;
-    const filter = getProductsFilter(sort);
-    let query = `SELECT products.name, price, images_small, url, categories.name AS category FROM products
-    JOIN categories ON products.category = categories.id WHERE description LIKE ? OR description LIKE ?`;
-    query += filter;
-    const [results] = await sql.query(query, [`%${s}%`, `%${s}%`]);
-    res.json(results);
-});
+const getSearchResults = [
+    searchInputValidation,
+    ash(async (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.json({ message: errors.array()[0].msg });
+        }
+        const { s, sort } = req.query;
+        const filter = getProductsFilter(sort);
+        let query = `SELECT products.name, price, images_small, url, categories.name AS category FROM products
+    JOIN categories ON products.category = categories.id WHERE products.name LIKE ? OR description LIKE ?`;
+        query += filter;
+        const [results] = await sql.query(query, [`%${s}%`, `%${s}%`]);
+        res.json(results);
+    })];
 
 module.exports = { getProducts, getSingleProduct, getHomeProducts, getSearchResults };
