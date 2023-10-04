@@ -11,13 +11,12 @@ export interface Product extends RowDataPacket {
     images_small: string;
 }
 
-export interface Category extends RowDataPacket {
-    category: string;
-}
-
 export interface ProductDetails extends Product {
     description: string;
     quantity: number;
     images_big: string;
 }
 
+export interface Category extends RowDataPacket {
+    category: string;
+}
