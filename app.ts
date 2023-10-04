@@ -1,8 +1,10 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-require('dotenv').config();
-const apiRouter = require('./routes/api');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+dotenv.config();
+import apiRouter from './routes/api';
+import { ResponseError } from './types';
 
 const app = express();
 
@@ -18,13 +20,13 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use('/api', apiRouter);
 
-app.use(function (req, res, next) {
-    const error = new Error("This page doesn't exist");
+app.use(function (_req, _res, next) {
+    const error: ResponseError = new Error("This page doesn't exist");
     error.status = 404;
     next(error);
 })
 
-app.use((err, req, res, next) => {
+app.use(function (err: ResponseError, _req: express.Request, res: express.Response) {
     res.status(err.status || 500).json({ message: err.message });
 });
 
